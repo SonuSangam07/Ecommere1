@@ -1,5 +1,5 @@
 const path = require('path');
-
+var cors=require('cors')
 const express = require('express');
 const bodyParser = require('body-parser');
 
@@ -11,7 +11,7 @@ const Cart = require('./models/cart');
 const CartItem = require('./models/cart-item');
 
 const app = express();
-
+app.use(cors());
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
@@ -19,7 +19,7 @@ const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 
 
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use((req, res, next) => {
   User.findByPk(1)
