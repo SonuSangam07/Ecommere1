@@ -3,20 +3,39 @@ const Cart = require('../models/cart');
 
 exports.getProducts = (req, res, next) => {
   Product.findAll()
-  .then(products=>{
-    res.json({products,sucess:true})
-   //console.log(products);
-   //res.render('shop/product-list', {
-      //prods: products,
-      //pageTitle: 'All Products',
-      //path: '/'
+    .then(products => {
+      res.json({products , success:true})
+      // res.render('shop/product-list', {
+      //   prods: products,
+      //   pageTitle: 'All Products',
+      //   path: '/products'
+      // });
+    })
+    .catch(err => {
+      console.log(err);
     });
+};
 
-  //})
+exports.limitProducts = (req, res, next) => {
+let page = Number(req.query.page);
+let Limit = 2;
 
+  Product.findAll({limit:2,offset:Limit*page})
+    .then(products => {
+      res.json({products , success:true})
+      // res.render('shop/product-list', {
+      //   prods: products,
+      //   pageTitle: 'All Products',
+      //   path: '/products'
+      // });
+    })
+    .catch(err => {
+      console.log(err);
+    });
 };
 
 exports.getProduct = (req, res, next) => {
+  
   const prodId = req.params.productId;
   Product.findAll({where:{id:prodId}})
   .then(product=>{
@@ -57,15 +76,19 @@ exports.getCart = (req, res, next) => {
     return cart
 .getProducts()
 .then(products=>{
-  res.render('shop/cart', {
-            path: '/cart',
-            pageTitle: 'Your Cart',
-            products: products
+  res.status(200).json({
+    succes:true,
+    products:products
+  })
+  //res.render('shop/cart', {
+           // path: '/cart',
+            //pageTitle: 'Your Cart',
+            //products: products
            });
 })
   .catch(err => console.log(err));
-})
-.catch(err => console.log(err));
+//})
+//.catch(err => console.log(err));
 };
 
 exports.postCart = (req, res, next) => {
@@ -105,19 +128,21 @@ exports.postCart = (req, res, next) => {
 };
 
 exports.postCartDeleteProduct = (req, res, next) => {
-  const prodId = req.body.productId;
+  const prodId = req.params.productId;
   req.user
     .getCart()
     .then(cart => {
       return cart.getProducts({ where: { id: prodId } });
     })
     .then(products => {
+      
       const product = products[0];
       return product.cartItem.destroy();
     })
-    .then(result => {
-      res.redirect('/cart');
-    })
+  //  .then(result => {
+      ////res.json('deleted');
+      //res.redirect('/cart');
+  //  })
     .catch(err => console.log(err));
 };
 
