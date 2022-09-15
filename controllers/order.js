@@ -6,54 +6,37 @@ const OrderItem = require("../models/order-item");
 const user = require("../models/user");
 
 
-exports.createOrder =  async (req,res,next)=>{
-    let order = await req.user.createOrder() 
-    
-    let myOrders = []
-    req.user.getCart()
-    .then(cart=>{
-        console.log('Inside CartItems',cart)
-        cart.getProducts()
-        .then(async(products)=>{
-            console.log('Cart Products',products)
-            for(let i=0;i<products.length;i++) {
-                // console.log('prodycts',products[i])
-               let order_items =   await order.addProduct(products[i] , { 
-                    through : {quantity : products[i].cartItem.quantity} })
-                    myOrders.push(order_items)
-                        console.log(myOrders)
-                   }
-                   CartItem.destroy({where:{cartId : cart.id}})
-                   .then(response=>console.log(response))
-                   res.status(200).json({data: myOrders , success : true})
-                 })
-        .catch(err=>console.log(err))
+exports.createOrder =(req,res,next)=>{
+    let orders
+    let fetchedCart
+    req.user.getCart().then(cart=>{
+      fetchedCart=cart
+      return cart.getProducts();
     })
-    .catch((err)=>{
-         res.status(500).json(err)
+    .then(products =>{
+     return req.user.createOrder()
+     .then(order=>{
+      orders=order;
+      return order.addProducts(products.map(product=>{
+         product.orderItem= {quantity:product.cartItem.quantity}       
+         return product;
+       }))    
+     })   
     })
- }
+    .then(result=>{   
+      fetchedCart.setProducts(null)
+      res.status(200).json({orders:orders})
+      
+    })
+}
 
 
  exports.showOrder = (req,res,next)=>{
-    let Orders=[]
-    
-    let userId = req.user.id
-    Order.findAll({where:{userId:userId}})
-    .then(async(orders)=>{
-        for(let i=0;i<orders.length;i++) {
-          let productsarr = []
-          let orderobj = {'Orders': orders[i]}
-         let OrderItems = await OrderItem.findAll({where:{orderId : orders[i].id}})
-         for(let j=0;j<OrderItems.length;j++) {
-            let product = await Product.findByPk(OrderItems[j].productId)
-            productsarr.push(product)
-         }
-            orderobj["Products"] = productsarr
-            Orders.push(orderobj)
-        }
-        res.status(200).json({data:Orders, success: true})
+    req.user.getOrders({include:['products']})
+    .then(orders=>{
+      res.status(200).json(orders)
+    }).catch(err=>{
+      console.log(err);
     })
-   
-   
-}
+    
+  };
